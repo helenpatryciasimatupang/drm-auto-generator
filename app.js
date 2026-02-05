@@ -1,8 +1,8 @@
-console.log("✅ RFP Auto Generator Loaded");
+console.log("✅ RFP Engine Loaded");
 
-// ==========================
+// =======================
 // HELPER
-// ==========================
+// =======================
 function today() {
   return new Date().toISOString().slice(0, 10);
 }
@@ -15,14 +15,14 @@ function getCityFromTenant(tenant) {
   return "";
 }
 
-// ==========================
-// MAIN
-// ==========================
+// =======================
+// MAIN ENGINE
+// =======================
 function processExcel() {
   const fileInput = document.getElementById("file");
 
   if (!fileInput.files.length) {
-    alert("Upload Excel Submit DRM dulu");
+    alert("Upload file Template Submit DRM dulu");
     return;
   }
 
@@ -30,11 +30,13 @@ function processExcel() {
 
   reader.onload = function (e) {
     const wb = XLSX.read(e.target.result, { type: "binary" });
-    const sheet = wb.Sheets[wb.SheetNames[0]];
-    const rows = XLSX.utils.sheet_to_json(sheet);
+    const sheetName = wb.SheetNames[0];
+    const sheet = wb.Sheets[sheetName];
+
+    const rows = XLSX.utils.sheet_to_json(sheet, { defval: "" });
 
     const output = rows.map(row => {
-      const tenantRaw = row["Tenant ID"] || "";
+      const tenantRaw = row["Tenant"] || row["Tenant ID"] || "";
       const tenant = tenantRaw.replace(/^LN/, "");
 
       const kawasan = row["Nama Perumahan/ Kawasan"] || "";
@@ -43,9 +45,11 @@ function processExcel() {
       const hpDesign = row["HP Design (Breakdown Permit ID)"] || "";
 
       return {
-        // ======================
-        // RFP AUTO
-        // ======================
+        ...row,
+
+        // =====================
+        // AUTO OVERRIDE
+        // =====================
         "Vendor RFP": "KESA",
         "Date Input": today(),
         "Project Type": "NRO B2S Longdrop",
@@ -57,40 +61,24 @@ function processExcel() {
         "Cluster ID APD": tenant + "-001",
 
         "FDT Coding": fdt ? fdt + "EXT" : "",
-        "Drawing Number LM": row["Drawing Number LM"] || "",
-
-        "Nama Perumahan/ Kawasan": kawasan,
         "FDT Name/ Area Name": kawasan ? kawasan + " ADD HP" : "",
 
-        "Latitude": row["Latitude"] || "",
-        "Longitude": row["Longitude"] || "",
-
-        "HP Plan": hpPlan,
         "HP Survey": hpPlan,
-        "HP Design (Breakdown Permit ID)": hpDesign,
         "HP APD All": hpDesign,
 
-        "HP Residential": row["HP Residential"] || "",
-        "Bizz Pass": row["Bizz Pass"] || "",
-
         "Type FDT": "48C",
-        "Kebutuhan Core BB": row["Kebutuhan Core BB"] || "",
-        "Jumlah Splitter": row["Jumlah Splitter"] || "",
-        "KM Strand LM (M)": row["KM Strand LM (M)"] || "",
-        "Civil Work": row["Civil Work"] || "",
-
-        "Link GDrive": ""
+        "Link Gdrive": ""
       };
     });
 
-    const outSheet = XLSX.utils.json_to_sheet(output);
+    const outSheet = XLSX.utils.json_to_sheet(output, { skipHeader: false });
     const outWB = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(outWB, outSheet, "RFP FINAL");
+    XLSX.utils.book_append_sheet(outWB, outSheet, sheetName);
 
     XLSX.writeFile(outWB, "RFP_FINAL.xlsx");
 
     document.getElementById("status").innerText =
-      "✅ RFP berhasil digenerate (auto isi)";
+      "✅ RFP FINAL berhasil digenerate (siap submit)";
   };
 
   reader.readAsBinaryString(fileInput.files[0]);
