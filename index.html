@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>RFP Auto Generator</title>
+<script src="lib/xlsx.full.min.js"></script>
+<style>
+body { font-family: Arial; padding:20px }
+input,button { padding:8px; margin:6px 0; width:360px }
+</style>
+</head>
+<body>
+
+<h2>RFP AUTO GENERATOR</h2>
+
+<input type="file" id="file" accept=".xlsx,.xls">
+<br>
+<button onclick="processExcel()">Generate RFP</button>
+
+<p id="status"></p>
+
+<script src="app.js"></script>
+</body>
+</html>
