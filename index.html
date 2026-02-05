@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <title>RFP Auto Generator</title>
 
-  <!-- XLSX LIBRARY VIA CDN (WAJIB) -->
+  <!-- XLSX -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 
   <style>
@@ -13,7 +13,7 @@
       padding: 30px;
     }
     h2 {
-      margin-bottom: 20px;
+      margin-bottom: 10px;
     }
     input, button {
       padding: 10px;
@@ -29,19 +29,14 @@
 <body>
 
   <h2>RFP AUTO GENERATOR</h2>
+  <p>Upload <b>Template Submit DRM</b>, sistem akan auto isi RFP</p>
 
-  <!-- INPUT FILE -->
   <input type="file" id="file" accept=".xlsx,.xls">
   <br>
-
-  <!-- BUTTON -->
   <button onclick="processExcel()">Generate RFP</button>
 
-  <!-- STATUS -->
   <p id="status"></p>
 
-  <!-- APP LOGIC (HARUS DI PALING BAWAH) -->
   <script src="app.js"></script>
-
 </body>
 </html>
