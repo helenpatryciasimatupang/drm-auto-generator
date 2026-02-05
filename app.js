@@ -1,3 +1,5 @@
+console.log("APP.JS LOADED");
+
 function getCityFromTenant(tenant) {
   if (tenant.includes("SMG")) return "SEMARANG";
   if (tenant.includes("MDN")) return "MEDAN";
@@ -7,18 +9,21 @@ function getCityFromTenant(tenant) {
 }
 
 function today() {
-  return new Date().toISOString().slice(0,10);
+  return new Date().toISOString().slice(0, 10);
 }
 
 function processExcel() {
+  console.log("BUTTON CLICKED");
+
   const fileInput = document.getElementById("file");
   if (!fileInput.files.length) {
-    alert("Upload Excel dulu");
+    alert("❌ Upload file Excel dulu");
     return;
   }
 
   const reader = new FileReader();
-  reader.onload = (e) => {
+
+  reader.onload = function (e) {
     const wb = XLSX.read(e.target.result, { type: "binary" });
     const sheet = wb.Sheets[wb.SheetNames[0]];
     const data = XLSX.utils.sheet_to_json(sheet);
