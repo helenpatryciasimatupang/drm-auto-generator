@@ -1,5 +1,9 @@
-console.log("APP.JS LOADED");
+// CEK FILE KELOAD
+console.log("✅ app.js berhasil diload");
 
+// ============================
+// HELPER
+// ============================
 function getCityFromTenant(tenant) {
   if (tenant.includes("SMG")) return "SEMARANG";
   if (tenant.includes("MDN")) return "MEDAN";
@@ -12,10 +16,14 @@ function today() {
   return new Date().toISOString().slice(0, 10);
 }
 
+// ============================
+// MAIN FUNCTION (BUTTON)
+// ============================
 function processExcel() {
-  console.log("BUTTON CLICKED");
+  console.log("🟢 tombol Generate RFP diklik");
 
   const fileInput = document.getElementById("file");
+
   if (!fileInput.files.length) {
     alert("❌ Upload file Excel dulu");
     return;
@@ -24,8 +32,9 @@ function processExcel() {
   const reader = new FileReader();
 
   reader.onload = function (e) {
-    const wb = XLSX.read(e.target.result, { type: "binary" });
-    const sheet = wb.Sheets[wb.SheetNames[0]];
+    const workbook = XLSX.read(e.target.result, { type: "binary" });
+    const sheetName = workbook.SheetNames[0];
+    const sheet = workbook.Sheets[sheetName];
     const data = XLSX.utils.sheet_to_json(sheet);
 
     const output = data.map(row => {
@@ -34,24 +43,31 @@ function processExcel() {
 
       return {
         ...row,
+
+        // OTOMATIS
         "Vendor RFP": "KESA",
         "Project Type": "NRO B2S Longdrop",
         "Date Input": today(),
+
         "Tenant ID": "LN" + tenant,
         "Permit ID": "LN" + tenant + "-001",
         "Cluster ID APD": tenant + "-001",
+
         "City Town": getCityFromTenant(tenant),
+
         "Type FDT": "48C",
         "Link GDrive": ""
       };
     });
 
-    const ws = XLSX.utils.json_to_sheet(output);
-    const wbOut = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wbOut, ws, "RFP FINAL");
-    XLSX.writeFile(wbOut, "RFP_FINAL.xlsx");
+    const newSheet = XLSX.utils.json_to_sheet(output);
+    const newWorkbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(newWorkbook, newSheet, "RFP FINAL");
 
-    document.getElementById("status").innerText = "✅ RFP BERHASIL DIGENERATE";
+    XLSX.writeFile(newWorkbook, "RFP_FINAL.xlsx");
+
+    document.getElementById("status").innerText =
+      "✅ RFP berhasil digenerate";
   };
 
   reader.readAsBinaryString(fileInput.files[0]);
