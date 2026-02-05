@@ -1,42 +1,37 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <title>RFP Auto Generator</title>
+<meta charset="UTF-8">
+<title>RFP Auto Generator</title>
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 
-  <!-- XLSX -->
-  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
-
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      padding: 30px;
-    }
-    h2 {
-      margin-bottom: 10px;
-    }
-    input, button {
-      padding: 10px;
-      margin: 8px 0;
-      width: 320px;
-    }
-    button {
-      cursor: pointer;
-    }
-  </style>
+<style>
+body { font-family: Arial; padding:20px }
+label { display:block; margin-top:10px }
+input, textarea, button {
+  width:360px;
+  padding:8px;
+  margin-top:4px;
+}
+button { margin-top:20px; cursor:pointer }
+</style>
 </head>
 
 <body>
 
-  <h2>RFP AUTO GENERATOR</h2>
-  <p>Upload <b>Template Submit DRM</b>, sistem akan auto isi RFP</p>
+<h2>RFP AUTO GENERATOR</h2>
+<p>Isi data DRM → sistem generate Excel RFP otomatis</p>
 
-  <input type="file" id="file" accept=".xlsx,.xls">
-  <br>
-  <button onclick="processExcel()">Generate RFP</button>
+<label>Tenant ID (tanpa LN)</label>
+<input id="tenant">
 
-  <p id="status"></p>
+<label>Nama Perumahan / Kawasan</label>
+<input id="kawasan">
 
-  <script src="app.js"></script>
-</body>
-</html>
+<label>FDT Coding</label>
+<input id="fdt">
+
+<label>Drawing Number LM</label>
+<input id="drawing">
+
+<label>Latitude</labe
