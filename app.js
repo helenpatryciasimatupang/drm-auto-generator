@@ -1,5 +1,5 @@
 function today() {
-  return new Date().toISOString().slice(0,10);
+  return new Date().toISOString().slice(0, 10);
 }
 
 function cityFromTenant(t) {
@@ -21,46 +21,77 @@ function generate() {
     return;
   }
 
-  const data = [{
-    "Vendor RFP": "KESA",
-    "Date Input": today(),
-    "Project Type": "NRO B2S Longdrop",
-    "City Town": cityFromTenant(tenant),
+  // KUNCI URUTAN KOLOM SESUAI SUBMIT DRM
+  const headers = [
+    "Vendor RFP",
+    "Date Input",
+    "Project Type",
+    "City Town",
+    "Tenant ID",
+    "Permit ID",
+    "Cluster ID APD",
+    "FDT Coding",
+    "Drawing Number LM",
+    "Nama Perumahan/ Kawasan",
+    "FDT Name/ Area Name",
+    "Latitude",
+    "Longitude",
+    "HP Plan",
+    "HP Survey",
+    "HP Design (Breakdown Permit ID)",
+    "HP APD All",
+    "HP Residential",
+    "Bizz Pass",
+    "Type FDT",
+    "Kebutuhan Core BB",
+    "Jumlah Splitter",
+    "KM Strand LM (M)",
+    "Civil Work",
+    "Link GDrive"
+  ];
 
-    "Tenant ID": "LN" + tenant,
-    "Permit ID": "LN" + tenant + "-001",
-    "Cluster ID APD": tenant + "-001",
+  const row = [
+    "KESA",
+    today(),
+    "NRO B2S Longdrop",
+    cityFromTenant(tenant),
 
-    "FDT Coding": v("fdt") + "EXT",
-    "Drawing Number LM": v("drawing"),
+    "LN" + tenant,
+    "LN" + tenant + "-001",
+    tenant + "-001",
 
-    "Nama Perumahan/ Kawasan": v("kawasan"),
-    "FDT Name/ Area Name": v("kawasan") + " ADD HP",
+    v("fdt") + "EXT",
+    v("drawing"),
 
-    "Latitude": v("lat"),
-    "Longitude": v("lng"),
+    v("kawasan"),
+    v("kawasan") + " ADD HP",
 
-    "HP Plan": v("hpPlan"),
-    "HP Survey": v("hpPlan"),
-    "HP Design (Breakdown Permit ID)": v("hpDesign"),
-    "HP APD All": v("hpDesign"),
+    v("lat"),
+    v("lng"),
 
-    "HP Residential": v("hpRes"),
-    "Bizz Pass": v("bizz"),
+    v("hpPlan"),
+    v("hpPlan"),
+    v("hpDesign"),
+    v("hpDesign"),
 
-    "Type FDT": "48C",
-    "Kebutuhan Core BB": v("core"),
-    "Jumlah Splitter": v("splitter"),
-    "KM Strand LM (M)": v("km"),
-    "Civil Work": v("civil"),
+    v("hpRes"),
+    v("bizz"),
 
-    "Link GDrive": ""
-  }];
+    "48C",
+    v("core"),
+    v("splitter"),
+    v("km"),
+    v("civil"),
 
-  const ws = XLSX.utils.json_to_sheet(data);
+    ""
+  ];
+
+  const ws = XLSX.utils.aoa_to_sheet([headers, row]);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "RFP");
 
   XLSX.writeFile(wb, "RFP_FINAL.xlsx");
-  document.getElementById("status").innerText = "✅ RFP berhasil dibuat";
+
+  document.getElementById("status").innerText =
+    "✅ RFP FINAL berhasil dibuat & siap submit";
 }
