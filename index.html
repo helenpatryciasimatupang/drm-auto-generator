@@ -1,38 +1,47 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-<meta charset="UTF-8">
-<title>RFP Auto Generator</title>
+  <meta charset="UTF-8">
+  <title>RFP Auto Generator</title>
 
-<!-- CDN XLSX (AMAN & RINGAN) -->
-<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+  <!-- XLSX LIBRARY VIA CDN (WAJIB) -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 
-<style>
-body {
-  font-family: Arial;
-  padding: 20px;
-}
-input, button {
-  padding: 8px;
-  margin: 6px 0;
-  width: 360px;
-}
-button {
-  cursor: pointer;
-}
-</style>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 30px;
+    }
+    h2 {
+      margin-bottom: 20px;
+    }
+    input, button {
+      padding: 10px;
+      margin: 8px 0;
+      width: 320px;
+    }
+    button {
+      cursor: pointer;
+    }
+  </style>
 </head>
 
 <body>
 
-<h2>RFP AUTO GENERATOR</h2>
+  <h2>RFP AUTO GENERATOR</h2>
 
-<input type="file" id="file" accept=".xlsx,.xls">
-<br>
-<button onclick="processExcel()">Generate RFP</button>
+  <!-- INPUT FILE -->
+  <input type="file" id="file" accept=".xlsx,.xls">
+  <br>
 
-<p id="status"></p>
+  <!-- BUTTON -->
+  <button onclick="processExcel()">Generate RFP</button>
 
-<script src="app.js"></script>
+  <!-- STATUS -->
+  <p id="status"></p>
+
+  <!-- APP LOGIC (HARUS DI PALING BAWAH) -->
+  <script src="app.js"></script>
+
 </body>
 </html>
