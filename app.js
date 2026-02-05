@@ -1,85 +1,66 @@
-console.log("✅ RFP Engine Loaded");
-
-// =======================
-// HELPER
-// =======================
 function today() {
-  return new Date().toISOString().slice(0, 10);
+  return new Date().toISOString().slice(0,10);
 }
 
-function getCityFromTenant(tenant) {
-  if (tenant.includes("SMG")) return "SEMARANG";
-  if (tenant.includes("MDN")) return "MEDAN";
-  if (tenant.includes("SLW") || tenant.includes("TGL")) return "TEGAL";
-  if (tenant.includes("SBY")) return "SURABAYA";
+function cityFromTenant(t) {
+  if (t.includes("SMG")) return "SEMARANG";
+  if (t.includes("MDN")) return "MEDAN";
+  if (t.includes("SLW") || t.includes("TGL")) return "TEGAL";
+  if (t.includes("SBY")) return "SURABAYA";
   return "";
 }
 
-// =======================
-// MAIN ENGINE
-// =======================
-function processExcel() {
-  const fileInput = document.getElementById("file");
+function v(id) {
+  return document.getElementById(id).value || "";
+}
 
-  if (!fileInput.files.length) {
-    alert("Upload file Template Submit DRM dulu");
+function generate() {
+  const tenant = v("tenant");
+  if (!tenant) {
+    alert("Tenant ID wajib diisi");
     return;
   }
 
-  const reader = new FileReader();
+  const data = [{
+    "Vendor RFP": "KESA",
+    "Date Input": today(),
+    "Project Type": "NRO B2S Longdrop",
+    "City Town": cityFromTenant(tenant),
 
-  reader.onload = function (e) {
-    const wb = XLSX.read(e.target.result, { type: "binary" });
-    const sheetName = wb.SheetNames[0];
-    const sheet = wb.Sheets[sheetName];
+    "Tenant ID": "LN" + tenant,
+    "Permit ID": "LN" + tenant + "-001",
+    "Cluster ID APD": tenant + "-001",
 
-    const rows = XLSX.utils.sheet_to_json(sheet, { defval: "" });
+    "FDT Coding": v("fdt") + "EXT",
+    "Drawing Number LM": v("drawing"),
 
-    const output = rows.map(row => {
-      const tenantRaw = row["Tenant"] || row["Tenant ID"] || "";
-      const tenant = tenantRaw.replace(/^LN/, "");
+    "Nama Perumahan/ Kawasan": v("kawasan"),
+    "FDT Name/ Area Name": v("kawasan") + " ADD HP",
 
-      const kawasan = row["Nama Perumahan/ Kawasan"] || "";
-      const fdt = row["FDT Coding"] || "";
-      const hpPlan = row["HP Plan"] || "";
-      const hpDesign = row["HP Design (Breakdown Permit ID)"] || "";
+    "Latitude": v("lat"),
+    "Longitude": v("lng"),
 
-      return {
-        ...row,
+    "HP Plan": v("hpPlan"),
+    "HP Survey": v("hpPlan"),
+    "HP Design (Breakdown Permit ID)": v("hpDesign"),
+    "HP APD All": v("hpDesign"),
 
-        // =====================
-        // AUTO OVERRIDE
-        // =====================
-        "Vendor RFP": "KESA",
-        "Date Input": today(),
-        "Project Type": "NRO B2S Longdrop",
+    "HP Residential": v("hpRes"),
+    "Bizz Pass": v("bizz"),
 
-        "City Town": getCityFromTenant(tenant),
+    "Type FDT": "48C",
+    "Kebutuhan Core BB": v("core"),
+    "Jumlah Splitter": v("splitter"),
+    "KM Strand LM (M)": v("km"),
+    "Civil Work": v("civil"),
 
-        "Tenant ID": "LN" + tenant,
-        "Permit ID": "LN" + tenant + "-001",
-        "Cluster ID APD": tenant + "-001",
+    "Link GDrive": ""
+  }];
 
-        "FDT Coding": fdt ? fdt + "EXT" : "",
-        "FDT Name/ Area Name": kawasan ? kawasan + " ADD HP" : "",
+  const ws = XLSX.utils.json_to_sheet(data);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "RFP");
 
-        "HP Survey": hpPlan,
-        "HP APD All": hpDesign,
-
-        "Type FDT": "48C",
-        "Link Gdrive": ""
-      };
-    });
-
-    const outSheet = XLSX.utils.json_to_sheet(output, { skipHeader: false });
-    const outWB = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(outWB, outSheet, sheetName);
-
-    XLSX.writeFile(outWB, "RFP_FINAL.xlsx");
-
-    document.getElementById("status").innerText =
-      "✅ RFP FINAL berhasil digenerate (siap submit)";
-  };
-
-  reader.readAsBinaryString(fileInput.files[0]);
+  XLSX.writeFile(wb, "RFP_FINAL.xlsx");
+  document.getElementById("status").innerText = "✅ RFP berhasil dibuat";
 }
