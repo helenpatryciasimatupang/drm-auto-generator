@@ -24,7 +24,7 @@ function generate() {
       return;
     }
 
-    // KUNCI URUTAN KOLOM (PLEK SUBMIT)
+    // 🔒 HEADER FINAL — SESUAI TEMPLATE (1 LINK GDRIVE SAJA)
     const headers = [
       "Vendor RFP",
       "Date Input",
@@ -49,6 +49,7 @@ function generate() {
       "Kebutuhan Core BB",
       "Jumlah Splitter",
       "KM Strand LM (M)",
+      "CIvil Work",
       "Civil Work",
       "Link GDrive"
     ];
@@ -85,8 +86,10 @@ function generate() {
       "-", // Kebutuhan Core BB
       "-", // Jumlah Splitter
       "-", // KM Strand LM (M)
+      "-", // CIvil Work
       "-", // Civil Work
-      ""   // Link GDrive (kosong)
+
+      ""   // ✅ Link GDrive (SATU AJA & KOSONG)
     ];
 
     const ws = XLSX.utils.aoa_to_sheet([headers, row]);
