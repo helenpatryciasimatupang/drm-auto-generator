@@ -13,20 +13,41 @@ function cityFromTenant(t) {
 }
 
 function v(id) {
-  return document.getElementById(id)?.value || "";
+  return document.getElementById(id)?.value?.trim() || "";
+}
+
+// Alias untuk nama header yang sering beda-beda
+function normHeader(h) {
+  return String(h || "")
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .replace(/[^\w\s()/.-]/g, "")
+    .trim();
 }
 
 function generate() {
   try {
-    console.log("🟢 Generate diklik");
-
-    const tenant = v("tenant").trim();
+    const tenant = v("tenant");
     if (!tenant) {
       alert("Tenant ID wajib diisi");
       return;
     }
 
-    // HEADER DIKUNCI SESUAI SUBMIT DRM
+    const kawasan = v("kawasan");
+    const fdt = v("fdt");
+    const drawing = v("drawing");
+    const lat = v("lat");
+    const lng = v("lng");
+    const hpPlan = v("hpPlan");
+    const hpDesign = v("hpDesign");
+    const hpRes = v("hpRes");
+    const bizz = v("bizz");
+
+    // === KUNCI URUTAN + KUNCI NAMA KOLUMN (template-like) ===
+    // Aku buat beberapa variasi header yang sering muncul.
+    // Pilih yang mana? Kita pakai yang paling umum + kita “duplikasi” untuk yang beda nama.
+    // Jadi walau template kamu pakai "CIvil Work", tetap keisi.
+
     const headers = [
       "Vendor RFP",
       "Date Input",
@@ -48,11 +69,18 @@ function generate() {
       "HP Residential",
       "Bizz Pass",
       "Type FDT",
+
+      // === Yang kamu minta selalu "-" ===
       "Kebutuhan Core BB",
       "Jumlah Splitter",
       "KM Strand LM (M)",
-      "Civil Work",
-      "Link GDrive"
+      "CIvil Work",      // sesuai tulisan kamu (huruf I besar)
+      "Civil Work",      // jaga-jaga kalau template pakai normal
+
+      // === Link gdrive harus kosong ===
+      "LINK GDRIVE",
+      "Link GDrive",
+      "Link Gdrive"
     ];
 
     const row = [
@@ -65,31 +93,34 @@ function generate() {
       "LN" + tenant + "-001",
       tenant + "-001",
 
-      v("fdt") ? v("fdt") + "EXT" : "",
-      v("drawing"),
+      fdt ? fdt + "EXT" : "",
+      drawing,
 
-      v("kawasan"),
-      v("kawasan") ? v("kawasan") + " ADD HP" : "",
+      kawasan,
+      kawasan ? kawasan + " ADD HP" : "",
 
-      v("lat"),
-      v("lng"),
+      lat,
+      lng,
 
-      v("hpPlan"),
-      v("hpPlan"),
-      v("hpDesign"),
-      v("hpDesign"),
+      hpPlan,
+      hpPlan,
+      hpDesign,
+      hpDesign,
 
-      v("hpRes"),
-      v("bizz"),
+      hpRes,
+      bizz,
 
       "48C",
 
-      "-",   // Kebutuhan Core BB
-      "-",   // Jumlah Splitter
-      "-",   // KM Strand LM (M)
-      "-",   // Civil Work
+      "-", // Kebutuhan Core BB
+      "-", // Jumlah Splitter
+      "-", // KM Strand LM (M)
+      "-", // CIvil Work
+      "-", // Civil Work
 
-      ""     // Link GDrive
+      "",  // LINK GDRIVE
+      "",  // Link GDrive
+      ""   // Link Gdrive
     ];
 
     const ws = XLSX.utils.aoa_to_sheet([headers, row]);
@@ -101,10 +132,8 @@ function generate() {
     document.getElementById("status").innerText =
       "✅ RFP berhasil digenerate & file terdownload";
 
-    alert("RFP_FINAL.xlsx berhasil dibuat");
-
   } catch (err) {
     console.error(err);
-    alert("❌ Gagal generate RFP, cek Console (F12)");
+    alert("❌ Gagal generate RFP. Buka Console (F12) untuk lihat error.");
   }
 }
