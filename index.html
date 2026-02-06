@@ -2,72 +2,55 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<title>RFP Auto Generator (Lookup FDTID Hotlist)</title>
+<title>RFP Auto Generator</title>
+
 <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+
 <style>
-body{font-family:Arial;margin:0;background:#f2f2f2}
-.container{max-width:1200px;margin:auto;background:#fff;padding:20px}
-table{width:100%;border-collapse:collapse;margin-top:10px}
-th,td{border:1px solid #ccc;padding:6px}
-th{background:#eee}
-input{width:100%;box-sizing:border-box;padding:6px}
-.actions{margin-top:12px;display:flex;gap:10px}
-button{padding:10px 14px;font-weight:bold;cursor:pointer}
-.note{color:#555;margin-top:6px}
+body { font-family: Arial, sans-serif; padding:20px }
+table { border-collapse: collapse; margin-top:12px }
+th,td { border:1px solid #ccc; padding:6px }
+input { width:120px; padding:4px }
+button { padding:8px 16px; margin-top:10px }
+.status { margin-top:10px; font-weight:bold }
 </style>
 </head>
 <body>
-<div class="container">
 
-<h2>RFP AUTO GENERATOR — Lookup by FDTID HOTLIST</h2>
+<h2>RFP AUTO GENERATOR — FULL AUTO (Monitoring + Master HP)</h2>
 
-<label><b>Upload Monitoring (CSV)</b></label>
+<h3>1️⃣ Upload Monitoring Daily (CSV)</h3>
 <input type="file" id="monitoringFile" accept=".csv">
+<p>Wajib kolom: <b>FDTID HOTLIST, City Town, Tenant ID PAPAH, Permit ID PAPAH, Cluster ID, FDT Name, HP Survey</b></p>
 
-<p class="note">
-Kolom wajib di Monitoring: <b>FDTID HOTLIST, City Town, Tenant ID PAPAH, Permit ID PAPAH, Cluster ID, FDT Name, HP Survey</b>
-</p>
+<h3>2️⃣ Upload Master Data HP (CSV)</h3>
+<input type="file" id="masterHPFile" accept=".csv">
+<p>Wajib kolom: <b>NODE_CODE, Latitude, Longitude, HP_TYPE, HOUSE_NUMBER</b></p>
+
+<h3>3️⃣ Input Area (cukup isi FDTID HOTLIST + manual minor)</h3>
 
 <table id="dataTable">
 <thead>
 <tr>
-<th>FDTID HOTLIST</th>
-<th>FDT Coding (manual)</th>
-<th>Drawing No (5 digit)</th>
-<th>Latitude</th>
-<th>Longitude</th>
-<th>HP Design</th>
-<th>HP Residential</th>
-<th>Bizz Pass</th>
+  <th>FDTID HOTLIST</th>
+  <th>FDT Coding</th>
+  <th>Drawing No (5 digit)</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><input class="hotlist"></td>
-<td><input class="fdt"></td>
-<td><input class="draw5" placeholder="00244"></td>
-<td><input class="lat"></td>
-<td><input class="lng"></td>
-<td><input class="hpDesign"></td>
-<td><input class="hpRes"></td>
-<td><input class="bizz"></td>
+  <td><input class="hotlist"></td>
+  <td><input class="fdt"></td>
+  <td><input class="draw5"></td>
 </tr>
 </tbody>
 </table>
 
-<div class="actions">
-  <button type="button" id="btnAdd">➕ Tambah Area</button>
-  <button type="button" id="btnGen">📥 Generate RFP</button>
-</div>
+<button onclick="addRow()">➕ Tambah Area</button>
+<button onclick="generate()">📥 Generate RFP</button>
 
-<p id="status"></p>
-
-</div>
+<div id="status" class="status"></div>
 
 <script src="app.js"></script>
-<script>
-document.getElementById("btnAdd").addEventListener("click", addRow);
-document.getElementById("btnGen").addEventListener("click", generate);
-</script>
 </body>
 </html>
