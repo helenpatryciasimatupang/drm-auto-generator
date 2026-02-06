@@ -16,15 +16,6 @@ function v(id) {
   return document.getElementById(id)?.value?.trim() || "";
 }
 
-// Alias untuk nama header yang sering beda-beda
-function normHeader(h) {
-  return String(h || "")
-    .toLowerCase()
-    .replace(/\s+/g, " ")
-    .replace(/[^\w\s()/.-]/g, "")
-    .trim();
-}
-
 function generate() {
   try {
     const tenant = v("tenant");
@@ -33,21 +24,7 @@ function generate() {
       return;
     }
 
-    const kawasan = v("kawasan");
-    const fdt = v("fdt");
-    const drawing = v("drawing");
-    const lat = v("lat");
-    const lng = v("lng");
-    const hpPlan = v("hpPlan");
-    const hpDesign = v("hpDesign");
-    const hpRes = v("hpRes");
-    const bizz = v("bizz");
-
-    // === KUNCI URUTAN + KUNCI NAMA KOLUMN (template-like) ===
-    // Aku buat beberapa variasi header yang sering muncul.
-    // Pilih yang mana? Kita pakai yang paling umum + kita “duplikasi” untuk yang beda nama.
-    // Jadi walau template kamu pakai "CIvil Work", tetap keisi.
-
+    // KUNCI URUTAN KOLOM (PLEK SUBMIT)
     const headers = [
       "Vendor RFP",
       "Date Input",
@@ -69,18 +46,11 @@ function generate() {
       "HP Residential",
       "Bizz Pass",
       "Type FDT",
-
-      // === Yang kamu minta selalu "-" ===
       "Kebutuhan Core BB",
       "Jumlah Splitter",
       "KM Strand LM (M)",
-      "CIvil Work",      // sesuai tulisan kamu (huruf I besar)
-      "Civil Work",      // jaga-jaga kalau template pakai normal
-
-      // === Link gdrive harus kosong ===
-      "LINK GDRIVE",
-      "Link GDrive",
-      "Link Gdrive"
+      "Civil Work",
+      "Link GDrive"
     ];
 
     const row = [
@@ -93,34 +63,30 @@ function generate() {
       "LN" + tenant + "-001",
       tenant + "-001",
 
-      fdt ? fdt + "EXT" : "",
-      drawing,
+      v("fdt") ? v("fdt") + "EXT" : "",
+      v("drawing"),
 
-      kawasan,
-      kawasan ? kawasan + " ADD HP" : "",
+      v("kawasan"),
+      v("kawasan") ? v("kawasan") + " ADD HP" : "",
 
-      lat,
-      lng,
+      v("lat"),
+      v("lng"),
 
-      hpPlan,
-      hpPlan,
-      hpDesign,
-      hpDesign,
+      v("hpPlan"),
+      v("hpPlan"),
+      v("hpDesign"),
+      v("hpDesign"),
 
-      hpRes,
-      bizz,
+      v("hpRes"),
+      v("bizz"),
 
       "48C",
 
       "-", // Kebutuhan Core BB
       "-", // Jumlah Splitter
       "-", // KM Strand LM (M)
-      "-", // CIvil Work
       "-", // Civil Work
-
-      "",  // LINK GDRIVE
-      "",  // Link GDrive
-      ""   // Link Gdrive
+      ""   // Link GDrive (kosong)
     ];
 
     const ws = XLSX.utils.aoa_to_sheet([headers, row]);
@@ -130,10 +96,11 @@ function generate() {
     XLSX.writeFile(wb, "RFP_FINAL.xlsx");
 
     document.getElementById("status").innerText =
-      "✅ RFP berhasil digenerate & file terdownload";
+      "✅ RFP FINAL berhasil dibuat & terdownload";
+    alert("RFP_FINAL.xlsx berhasil dibuat");
 
-  } catch (err) {
-    console.error(err);
-    alert("❌ Gagal generate RFP. Buka Console (F12) untuk lihat error.");
+  } catch (e) {
+    console.error(e);
+    alert("❌ Gagal generate RFP. Buka Console (F12) untuk detail.");
   }
 }
