@@ -7,38 +7,14 @@
 
 <style>
 body { font-family: Arial; margin:0; background:#f2f2f2 }
-.container {
-  max-width: 1200px;
-  margin: auto;
-  background: #fff;
-  padding: 20px;
-}
-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 10px;
-}
-th, td {
-  border: 1px solid #ccc;
-  padding: 6px;
-}
-th { background: #eee }
-input {
-  width: 100%;
-  box-sizing: border-box;
-  padding: 6px;
-}
-button {
-  padding: 10px 14px;
-  margin-top: 12px;
-  font-weight: bold;
-  cursor: pointer;
-}
-.actions {
-  margin-top: 15px;
-  display: flex;
-  gap: 10px;
-}
+.container { max-width: 1200px; margin:auto; background:#fff; padding:20px; }
+table { width:100%; border-collapse: collapse; margin-top: 10px; }
+th, td { border:1px solid #ccc; padding:6px; }
+th { background:#eee; }
+input { width:100%; box-sizing:border-box; padding:6px; }
+.actions { margin-top: 15px; display:flex; gap:10px; }
+button { padding:10px 14px; font-weight:bold; cursor:pointer; }
+#status { margin-top: 10px; font-weight: bold; }
 </style>
 </head>
 
@@ -46,42 +22,42 @@ button {
 <div class="container">
 
 <h2>RFP AUTO GENERATOR (MULTI AREA)</h2>
-<p>1 baris = 1 area. Tambah baris sesuai kebutuhan.</p>
+<p>1 baris = 1 area. Klik <b>Tambah Area</b> untuk tambah baris.</p>
 
 <table id="dataTable">
 <thead>
 <tr>
-<th>Tenant ID</th>
-<th>Nama Kawasan</th>
-<th>FDT Coding</th>
-<th>Drawing LM</th>
-<th>Latitude</th>
-<th>Longitude</th>
-<th>HP Plan</th>
-<th>HP Design</th>
-<th>HP Residential</th>
-<th>Bizz Pass</th>
+  <th>Tenant ID</th>
+  <th>Nama Kawasan</th>
+  <th>FDT Coding</th>
+  <th>Drawing LM</th>
+  <th>Latitude</th>
+  <th>Longitude</th>
+  <th>HP Plan</th>
+  <th>HP Design</th>
+  <th>HP Residential</th>
+  <th>Bizz Pass</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><input></td>
-<td><input></td>
-<td><input></td>
-<td><input></td>
-<td><input></td>
-<td><input></td>
-<td><input></td>
-<td><input></td>
-<td><input></td>
-<td><input></td>
+  <td><input class="tenant" placeholder="contoh: 890000"></td>
+  <td><input class="kawasan"></td>
+  <td><input class="fdt"></td>
+  <td><input class="drawing"></td>
+  <td><input class="lat"></td>
+  <td><input class="lng"></td>
+  <td><input class="hpPlan"></td>
+  <td><input class="hpDesign"></td>
+  <td><input class="hpRes"></td>
+  <td><input class="bizz"></td>
 </tr>
 </tbody>
 </table>
 
 <div class="actions">
-  <button onclick="addRow()">➕ Tambah Area</button>
-  <button onclick="generate()">📥 Generate RFP</button>
+  <button type="button" id="btnAdd">➕ Tambah Area</button>
+  <button type="button" id="btnGen">📥 Generate RFP</button>
 </div>
 
 <p id="status"></p>
@@ -89,5 +65,10 @@ button {
 </div>
 
 <script src="app.js"></script>
+<script>
+  // bind tombol setelah app.js keload
+  document.getElementById("btnAdd").addEventListener("click", addRow);
+  document.getElementById("btnGen").addEventListener("click", generate);
+</script>
 </body>
 </html>
