@@ -2,12 +2,10 @@ let monitoringMap = {};
 
 function today(){ return new Date().toISOString().slice(0,10); }
 
-// buang BOM (kadang CSV dari Excel ada \ufeff)
 function stripBOM(s){
   return s && s.charCodeAt(0) === 0xFEFF ? s.slice(1) : s;
 }
 
-// deteksi delimiter paling mungkin: ; , \t
 function detectDelimiter(line){
   const comma = (line.match(/,/g) || []).length;
   const semi  = (line.match(/;/g) || []).length;
@@ -17,7 +15,6 @@ function detectDelimiter(line){
   return ",";
 }
 
-// split 1 baris CSV dengan support "quote"
 function splitCSVLine(line, delim){
   const out = [];
   let cur = "";
@@ -27,13 +24,8 @@ function splitCSVLine(line, delim){
     const ch = line[i];
 
     if (ch === '"') {
-      // handle double quotes "" inside quotes
-      if (inQuotes && line[i+1] === '"') {
-        cur += '"';
-        i++;
-      } else {
-        inQuotes = !inQuotes;
-      }
+      if (inQuotes && line[i+1] === '"') { cur += '"'; i++; }
+      else { inQuotes = !inQuotes; }
       continue;
     }
 
@@ -42,69 +34,57 @@ function splitCSVLine(line, delim){
       cur = "";
       continue;
     }
-
     cur += ch;
   }
   out.push(cur);
   return out.map(x => x.trim());
 }
 
-// parse CSV text -> array of objects
+// NORMALISASI HEADER (biar aman dari spasi/beda huruf)
+function normHeader(h){
+  return String(h || "")
+    .replace(/\u00A0/g, " ")     // non-breaking space
+    .trim()
+    .replace(/\s+/g, " ")
+    .toUpperCase();
+}
+
+// cari baris header yang mengandung "FDTID HOTLIST"
+function findHeaderRowIndex(lines, delim){
+  for (let i=0; i<Math.min(lines.length, 30); i++){
+    const cols = splitCSVLine(lines[i], delim).map(normHeader);
+    if (cols.includes("FDTID HOTLIST")) return i;
+  }
+  return -1;
+}
+
 function parseCSV(text){
   text = stripBOM(text || "");
   const lines = text.split(/\r?\n/).filter(l => l.trim() !== "");
-  if (lines.length === 0) return [];
+  if (lines.length === 0) return { rows: [], headersNorm: [] };
 
   const delim = detectDelimiter(lines[0]);
-  const headers = splitCSVLine(lines[0], delim).map(h => h.trim());
+  const headerIdx = findHeaderRowIndex(lines, delim);
+  if (headerIdx === -1) return { rows: [], headersNorm: [] };
+
+  const headersRaw = splitCSVLine(lines[headerIdx], delim);
+  const headersNorm = headersRaw.map(normHeader);
 
   const rows = [];
-  for (let i=1; i<lines.length; i++){
+  for (let i = headerIdx + 1; i < lines.length; i++){
     const cols = splitCSVLine(lines[i], delim);
     if (cols.every(c => c === "")) continue;
 
     const obj = {};
-    headers.forEach((h, idx) => {
+    headersNorm.forEach((h, idx) => {
       obj[h] = (cols[idx] ?? "").trim();
     });
     rows.push(obj);
   }
-  return rows;
+
+  return { rows, headersNorm };
 }
 
-// load monitoring file
-function bindMonitoringLoader(){
-  const el = document.getElementById("monitoringFile");
-  if (!el) return;
-
-  el.addEventListener("change", (e) => {
-    const f = e.target.files[0];
-    if (!f) return;
-
-    const r = new FileReader();
-    r.onload = () => {
-      const rows = parseCSV(r.result);
-
-      monitoringMap = {};
-      rows.forEach(row => {
-        // header persis yang kamu kasih:
-        // FDTID HOTLIST, City Town, Tenant ID PAPAH, Permit ID PAPAH, Cluster ID, FDT Name, HP Survey
-        const key = (row["FDTID HOTLIST"] || "").trim();
-        if (key) monitoringMap[key] = row;
-      });
-
-      const count = Object.keys(monitoringMap).length;
-      document.getElementById("status").innerText =
-        `✅ Monitoring loaded (${count} data)`;
-      if (count === 0) {
-        alert("File kebaca, tapi kolom 'FDTID HOTLIST' tidak ketemu / delimiter beda. Parser sudah auto, tapi pastikan headernya persis 'FDTID HOTLIST'.");
-      }
-    };
-    r.readAsText(f);
-  });
-}
-
-// === UI helpers ===
 function addRow(){
   const tb = document.querySelector("#dataTable tbody");
   const r = tb.rows[0].cloneNode(true);
@@ -113,9 +93,8 @@ function addRow(){
 }
 
 function generate(){
-  const keys = Object.keys(monitoringMap);
-  if (!keys.length){
-    alert("Upload file Monitoring dulu (pastikan status Monitoring loaded > 0 data)");
+  if (!Object.keys(monitoringMap).length){
+    alert("Upload file Monitoring dulu (pastikan status loaded > 0 data)");
     return;
   }
 
@@ -136,7 +115,6 @@ function generate(){
   let no = 1;
 
   const trs = document.querySelectorAll("#dataTable tbody tr");
-
   for (const tr of trs){
     const hot = tr.querySelector(".hotlist")?.value?.trim() || "";
     if (!hot) continue;
@@ -160,17 +138,17 @@ function generate(){
       "KESA",
       today(),
       "NRO B2S Longdrop",
-      (m["City Town"] || "").trim(),
-      (m["Tenant ID PAPAH"] || "").trim(),
-      (m["Permit ID PAPAH"] || "").trim(),
-      (m["Cluster ID"] || "").trim(),
+      m["CITY TOWN"] || "",
+      m["TENANT ID PAPAH"] || "",
+      m["PERMIT ID PAPAH"] || "",
+      m["CLUSTER ID"] || "",
       fdt,
       d5 ? `KESA_2_PC_${d5}_0` : "",
-      (m["FDT Name"] || "").trim(),
-      (m["FDT Name"] || "").trim() ? `${(m["FDT Name"] || "").trim()} ADD HP` : "",
+      m["FDT NAME"] || "",
+      (m["FDT NAME"] ? `${m["FDT NAME"]} ADD HP` : ""),
       lat, lng,
-      (m["HP Survey"] || "").trim(),
-      (m["HP Survey"] || "").trim(),
+      m["HP SURVEY"] || "",
+      m["HP SURVEY"] || "",
       hpD,
       hpD,
       hpR,
@@ -196,5 +174,39 @@ function generate(){
     `✅ Berhasil generate (${data.length-1} baris)`;
 }
 
-// bind loader setelah DOM siap
-document.addEventListener("DOMContentLoaded", bindMonitoringLoader);
+document.addEventListener("DOMContentLoaded", () => {
+  const el = document.getElementById("monitoringFile");
+  if (!el) return;
+
+  el.addEventListener("change", (e) => {
+    const f = e.target.files[0];
+    if (!f) return;
+
+    const r = new FileReader();
+    r.onload = () => {
+      const parsed = parseCSV(r.result);
+      const rows = parsed.rows;
+
+      monitoringMap = {};
+      rows.forEach(row => {
+        const key = (row["FDTID HOTLIST"] || "").trim();
+        if (key) monitoringMap[key] = row;
+      });
+
+      const count = Object.keys(monitoringMap).length;
+
+      document.getElementById("status").innerText =
+        `✅ Monitoring loaded (${count} data)`;
+
+      if (count === 0){
+        // tampilkan header yang kebaca biar gampang cek
+        const preview = (parsed.headersNorm || []).slice(0, 20).join(" | ");
+        alert(
+          "Masih 0 data.\n" +
+          "Header yang kebaca (20 pertama):\n" + preview
+        );
+      }
+    };
+    r.readAsText(f);
+  });
+});
