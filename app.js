@@ -1,104 +1,130 @@
 let monitoringMap = {};
+let masterFDTMap = {};
 
+// ================= UTIL =================
 function today(){ return new Date().toISOString().slice(0,10); }
-
-function stripBOM(s){
-  return s && s.charCodeAt(0) === 0xFEFF ? s.slice(1) : s;
-}
+function stripBOM(s){ return s && s.charCodeAt(0) === 0xFEFF ? s.slice(1) : s; }
 
 function detectDelimiter(line){
-  const comma = (line.match(/,/g) || []).length;
-  const semi  = (line.match(/;/g) || []).length;
-  const tab   = (line.match(/\t/g) || []).length;
-  if (semi >= comma && semi >= tab) return ";";
-  if (tab >= comma && tab >= semi) return "\t";
+  const c=(line.match(/,/g)||[]).length;
+  const s=(line.match(/;/g)||[]).length;
+  const t=(line.match(/\t/g)||[]).length;
+  if(s>=c && s>=t) return ";";
+  if(t>=c && t>=s) return "\t";
   return ",";
 }
 
-function splitCSVLine(line, delim){
-  const out = [];
-  let cur = "";
-  let inQuotes = false;
-
-  for (let i=0; i<line.length; i++){
-    const ch = line[i];
-
-    if (ch === '"') {
-      if (inQuotes && line[i+1] === '"') { cur += '"'; i++; }
-      else { inQuotes = !inQuotes; }
-      continue;
-    }
-
-    if (ch === delim && !inQuotes) {
-      out.push(cur);
-      cur = "";
-      continue;
-    }
-    cur += ch;
+function splitCSV(line,d){
+  const out=[],cur=[""]; let q=false;
+  for(let i=0;i<line.length;i++){
+    const ch=line[i];
+    if(ch === '"'){ q=!q; continue; }
+    if(ch===d && !q){ out.push(cur.join("")); cur.length=0; continue; }
+    cur.push(ch);
   }
-  out.push(cur);
-  return out.map(x => x.trim());
+  out.push(cur.join(""));
+  return out.map(x=>x.trim());
 }
 
-// NORMALISASI HEADER (biar aman dari spasi/beda huruf)
-function normHeader(h){
-  return String(h || "")
-    .replace(/\u00A0/g, " ")     // non-breaking space
-    .trim()
-    .replace(/\s+/g, " ")
-    .toUpperCase();
+function norm(h){
+  return String(h||"").replace(/\u00A0/g," ").trim().replace(/\s+/g," ").toUpperCase();
 }
 
-// cari baris header yang mengandung "FDTID HOTLIST"
-function findHeaderRowIndex(lines, delim){
-  for (let i=0; i<Math.min(lines.length, 30); i++){
-    const cols = splitCSVLine(lines[i], delim).map(normHeader);
-    if (cols.includes("FDTID HOTLIST")) return i;
-  }
-  return -1;
-}
-
+// ================= CSV PARSER =================
 function parseCSV(text){
-  text = stripBOM(text || "");
-  const lines = text.split(/\r?\n/).filter(l => l.trim() !== "");
-  if (lines.length === 0) return { rows: [], headersNorm: [] };
+  text = stripBOM(text||"");
+  const lines = text.split(/\r?\n/).filter(l=>l.trim());
+  if(!lines.length) return [];
+  const d = detectDelimiter(lines[0]);
 
-  const delim = detectDelimiter(lines[0]);
-  const headerIdx = findHeaderRowIndex(lines, delim);
-  if (headerIdx === -1) return { rows: [], headersNorm: [] };
-
-  const headersRaw = splitCSVLine(lines[headerIdx], delim);
-  const headersNorm = headersRaw.map(normHeader);
-
-  const rows = [];
-  for (let i = headerIdx + 1; i < lines.length; i++){
-    const cols = splitCSVLine(lines[i], delim);
-    if (cols.every(c => c === "")) continue;
-
-    const obj = {};
-    headersNorm.forEach((h, idx) => {
-      obj[h] = (cols[idx] ?? "").trim();
-    });
-    rows.push(obj);
+  let headerIdx=-1;
+  for(let i=0;i<20;i++){
+    const cols = splitCSV(lines[i],d).map(norm);
+    if(cols.includes("FDTID HOTLIST") || cols.includes("NODE_CODE")){
+      headerIdx=i; break;
+    }
   }
+  if(headerIdx<0) return [];
 
-  return { rows, headersNorm };
+  const headers = splitCSV(lines[headerIdx],d).map(norm);
+  const rows=[];
+  for(let i=headerIdx+1;i<lines.length;i++){
+    const cols = splitCSV(lines[i],d);
+    if(cols.every(c=>!c)) continue;
+    const o={};
+    headers.forEach((h,idx)=>o[h]=cols[idx]||"");
+    rows.push(o);
+  }
+  return rows;
 }
 
+// ================= NORMALISASI FAT → FDT =================
+function fatToFdt(code){
+  return code.replace(/S\d+A\d+/i,"");
+}
+
+// ================= LOAD FILES =================
+document.getElementById("monitoringFile").addEventListener("change",e=>{
+  const r=new FileReader();
+  r.onload=()=>{
+    monitoringMap={};
+    parseCSV(r.result).forEach(row=>{
+      const k=row["FDTID HOTLIST"];
+      if(k) monitoringMap[k]=row;
+    });
+    document.getElementById("status").innerText =
+      `✅ Monitoring loaded (${Object.keys(monitoringMap).length})`;
+  };
+  r.readAsText(e.target.files[0]);
+});
+
+document.getElementById("masterHPFile").addEventListener("change",e=>{
+  const r=new FileReader();
+  r.onload=()=>{
+    masterFDTMap={};
+
+    parseCSV(r.result).forEach(row=>{
+      const node=row["NODE_CODE"];
+      if(!node) return;
+      const fdt=fatToFdt(node);
+
+      if(!masterFDTMap[fdt]){
+        masterFDTMap[fdt]={
+          lat:null,lng:null,
+          hpDesign:0,hpHome:0,hpBiz:0
+        };
+      }
+
+      // FDT coordinate (node tanpa SxxAxx)
+      if(!node.match(/S\d+A\d+/i)){
+        masterFDTMap[fdt].lat=row["LATITUDE"];
+        masterFDTMap[fdt].lng=row["LONGITUDE"];
+      }
+
+      const hn = Number(row["HOUSE_NUMBER"]||0);
+      masterFDTMap[fdt].hpDesign += hn;
+
+      if(row["HP_TYPE"]==="HOME") masterFDTMap[fdt].hpHome++;
+      if(row["HP_TYPE"]==="HOME-BIZ") masterFDTMap[fdt].hpBiz++;
+    });
+
+    document.getElementById("status").innerText +=
+      ` | Master HP loaded (${Object.keys(masterFDTMap).length} FDT)`;
+  };
+  r.readAsText(e.target.files[0]);
+});
+
+// ================= UI =================
 function addRow(){
-  const tb = document.querySelector("#dataTable tbody");
-  const r = tb.rows[0].cloneNode(true);
+  const tb=document.querySelector("#dataTable tbody");
+  const r=tb.rows[0].cloneNode(true);
   r.querySelectorAll("input").forEach(i=>i.value="");
   tb.appendChild(r);
 }
 
+// ================= GENERATE =================
 function generate(){
-  if (!Object.keys(monitoringMap).length){
-    alert("Upload file Monitoring dulu (pastikan status loaded > 0 data)");
-    return;
-  }
-
-  const headers = [
+  const headers=[
     "No","Vendor RFP","Date Input","Project Type","City Town",
     "Tenant ID","Permit ID","Cluster ID APD",
     "FDT Coding","Drawing Number LM",
@@ -111,102 +137,53 @@ function generate(){
     "CIvil Work","Link Gdrive"
   ];
 
-  const data = [headers];
-  let no = 1;
+  const data=[headers];
+  let no=1;
 
-  const trs = document.querySelectorAll("#dataTable tbody tr");
-  for (const tr of trs){
-    const hot = tr.querySelector(".hotlist")?.value?.trim() || "";
-    if (!hot) continue;
+  document.querySelectorAll("#dataTable tbody tr").forEach(tr=>{
+    const hot=tr.querySelector(".hotlist").value.trim();
+    if(!hot) return;
 
-    const m = monitoringMap[hot];
-    if (!m){
-      alert(`FDTID HOTLIST tidak ditemukan di Monitoring: ${hot}`);
-      return;
-    }
+    const m=monitoringMap[hot];
+    const fdtData=masterFDTMap[hot];
+    if(!m||!fdtData) return;
 
-    const fdt = tr.querySelector(".fdt")?.value?.trim() || "";
-    const d5  = tr.querySelector(".draw5")?.value?.trim() || "";
-    const lat = tr.querySelector(".lat")?.value?.trim() || "";
-    const lng = tr.querySelector(".lng")?.value?.trim() || "";
-    const hpD = tr.querySelector(".hpDesign")?.value?.trim() || "";
-    const hpR = tr.querySelector(".hpRes")?.value?.trim() || "";
-    const biz = tr.querySelector(".bizz")?.value?.trim() || "";
+    const fdt=tr.querySelector(".fdt").value.trim();
+    const d5=tr.querySelector(".draw5").value.trim();
 
     data.push([
       no++,
       "KESA",
       today(),
       "NRO B2S Longdrop",
-      m["CITY TOWN"] || "",
-      m["TENANT ID PAPAH"] || "",
-      m["PERMIT ID PAPAH"] || "",
-      m["CLUSTER ID"] || "",
+      m["CITY TOWN"],
+      m["TENANT ID PAPAH"],
+      m["PERMIT ID PAPAH"],
+      m["CLUSTER ID"],
       fdt,
       d5 ? `KESA_2_PC_${d5}_0` : "",
-      m["FDT NAME"] || "",
-      (m["FDT NAME"] ? `${m["FDT NAME"]} ADD HP` : ""),
-      lat, lng,
-      m["HP SURVEY"] || "",
-      m["HP SURVEY"] || "",
-      hpD,
-      hpD,
-      hpR,
-      biz,
+      m["FDT NAME"],
+      `${m["FDT NAME"]} ADD HP`,
+      fdtData.lat,
+      fdtData.lng,
+      m["HP SURVEY"],
+      m["HP SURVEY"],
+      fdtData.hpDesign,
+      fdtData.hpDesign,
+      fdtData.hpHome,
+      fdtData.hpBiz,
       "48C",
-      "-", "-", "-",
+      "-","-","-",
       "AE",
       ""
     ]);
-  }
+  });
 
-  if (data.length === 1){
-    alert("Isi minimal 1 FDTID HOTLIST");
-    return;
-  }
-
-  const ws = XLSX.utils.aoa_to_sheet(data);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "Submit DRM");
-  XLSX.writeFile(wb, "RFP_SUBMIT_DRM.xlsx");
+  const ws=XLSX.utils.aoa_to_sheet(data);
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,"Submit DRM");
+  XLSX.writeFile(wb,"RFP_SUBMIT_DRM.xlsx");
 
   document.getElementById("status").innerText =
     `✅ Berhasil generate (${data.length-1} baris)`;
 }
-
-document.addEventListener("DOMContentLoaded", () => {
-  const el = document.getElementById("monitoringFile");
-  if (!el) return;
-
-  el.addEventListener("change", (e) => {
-    const f = e.target.files[0];
-    if (!f) return;
-
-    const r = new FileReader();
-    r.onload = () => {
-      const parsed = parseCSV(r.result);
-      const rows = parsed.rows;
-
-      monitoringMap = {};
-      rows.forEach(row => {
-        const key = (row["FDTID HOTLIST"] || "").trim();
-        if (key) monitoringMap[key] = row;
-      });
-
-      const count = Object.keys(monitoringMap).length;
-
-      document.getElementById("status").innerText =
-        `✅ Monitoring loaded (${count} data)`;
-
-      if (count === 0){
-        // tampilkan header yang kebaca biar gampang cek
-        const preview = (parsed.headersNorm || []).slice(0, 20).join(" | ");
-        alert(
-          "Masih 0 data.\n" +
-          "Header yang kebaca (20 pertama):\n" + preview
-        );
-      }
-    };
-    r.readAsText(f);
-  });
-});
