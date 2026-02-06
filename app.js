@@ -1,7 +1,5 @@
-console.log("✅ app.js loaded");
-
 function today() {
-  return new Date().toISOString().slice(0, 10);
+  return new Date().toISOString().slice(0,10);
 }
 
 function cityFromTenant(t) {
@@ -12,98 +10,80 @@ function cityFromTenant(t) {
   return "";
 }
 
-function v(id) {
-  return document.getElementById(id)?.value?.trim() || "";
+function addRow() {
+  const tbody = document.querySelector("#dataTable tbody");
+  const row = tbody.rows[0].cloneNode(true);
+  row.querySelectorAll("input").forEach(i => i.value = "");
+  tbody.appendChild(row);
 }
 
 function generate() {
-  try {
-    const tenant = v("tenant");
-    if (!tenant) {
-      alert("Tenant ID wajib diisi");
-      return;
-    }
+  const rows = document.querySelectorAll("#dataTable tbody tr");
 
-    // 🔒 HEADER FINAL — SESUAI TEMPLATE (1 LINK GDRIVE SAJA)
-    const headers = [
-      "Vendor RFP",
-      "Date Input",
-      "Project Type",
-      "City Town",
-      "Tenant ID",
-      "Permit ID",
-      "Cluster ID APD",
-      "FDT Coding",
-      "Drawing Number LM",
-      "Nama Perumahan/ Kawasan",
-      "FDT Name/ Area Name",
-      "Latitude",
-      "Longitude",
-      "HP Plan",
-      "HP Survey",
-      "HP Design (Breakdown Permit ID)",
-      "HP APD All",
-      "HP Residential",
-      "Bizz Pass",
-      "Type FDT",
-      "Kebutuhan Core BB",
-      "Jumlah Splitter",
-      "KM Strand LM (M)",
-      "CIvil Work",
-      "Civil Work",
-      "Link GDrive"
-    ];
+  const headers = [
+    "Vendor RFP","Date Input","Project Type","City Town",
+    "Tenant ID","Permit ID","Cluster ID APD",
+    "FDT Coding","Drawing Number LM",
+    "Nama Perumahan/ Kawasan","FDT Name/ Area Name",
+    "Latitude","Longitude",
+    "HP Plan","HP Survey",
+    "HP Design (Breakdown Permit ID)","HP APD All",
+    "HP Residential","Bizz Pass",
+    "Type FDT",
+    "Kebutuhan Core BB","Jumlah Splitter","KM Strand LM (M)",
+    "CIvil Work","Civil Work",
+    "Link GDrive"
+  ];
 
-    const row = [
+  const data = [headers];
+
+  rows.forEach(tr => {
+    const c = tr.querySelectorAll("input");
+    const tenant = c[0].value.trim();
+    if (!tenant) return;
+
+    data.push([
       "KESA",
       today(),
       "NRO B2S Longdrop",
       cityFromTenant(tenant),
 
-      "LN" + tenant,
-      "LN" + tenant + "-001",
-      tenant + "-001",
+      "LN"+tenant,
+      "LN"+tenant+"-001",
+      tenant+"-001",
 
-      v("fdt") ? v("fdt") + "EXT" : "",
-      v("drawing"),
+      c[2].value ? c[2].value+"EXT" : "",
+      c[3].value,
 
-      v("kawasan"),
-      v("kawasan") ? v("kawasan") + " ADD HP" : "",
+      c[1].value,
+      c[1].value ? c[1].value+" ADD HP" : "",
 
-      v("lat"),
-      v("lng"),
+      c[4].value,
+      c[5].value,
 
-      v("hpPlan"),
-      v("hpPlan"),
-      v("hpDesign"),
-      v("hpDesign"),
+      c[6].value,
+      c[6].value,
+      c[7].value,
+      c[7].value,
 
-      v("hpRes"),
-      v("bizz"),
+      c[8].value,
+      c[9].value,
 
       "48C",
+      "-","-","-","-","-",""
+    ]);
+  });
 
-      "-", // Kebutuhan Core BB
-      "-", // Jumlah Splitter
-      "-", // KM Strand LM (M)
-      "-", // CIvil Work
-      "-", // Civil Work
-
-      ""   // ✅ Link GDrive (SATU AJA & KOSONG)
-    ];
-
-    const ws = XLSX.utils.aoa_to_sheet([headers, row]);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "RFP");
-
-    XLSX.writeFile(wb, "RFP_FINAL.xlsx");
-
-    document.getElementById("status").innerText =
-      "✅ RFP FINAL berhasil dibuat & terdownload";
-    alert("RFP_FINAL.xlsx berhasil dibuat");
-
-  } catch (e) {
-    console.error(e);
-    alert("❌ Gagal generate RFP. Buka Console (F12) untuk detail.");
+  if (data.length === 1) {
+    alert("Isi minimal 1 area");
+    return;
   }
+
+  const ws = XLSX.utils.aoa_to_sheet(data);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "RFP");
+  XLSX.writeFile(wb, "RFP_FINAL.xlsx");
+
+  document.getElementById("status").innerText =
+    "✅ RFP berhasil dibuat ("+(data.length-1)+" baris)";
 }
