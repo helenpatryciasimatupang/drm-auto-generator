@@ -2,149 +2,33 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8" />
-<title>RFP AUTO GENERATOR — FINAL</title>
-
-<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-
+<title>RFP AUTO GENERATOR</title>
+<script src="lib/xlsx.full.min.js"></script>
 <style>
-body{font-family:Arial;padding:20px;background:#f6f6f6}
-.card{background:#fff;padding:20px;border-radius:10px;margin-bottom:20px}
-table{border-collapse:collapse;width:100%}
-th,td{border:1px solid #ccc;padding:6px;font-size:13px}
-input{width:100%;padding:6px}
-button{padding:10px 16px;margin-top:10px;cursor:pointer}
-.success{color:green;font-weight:bold}
+body { font-family: Arial; padding:20px }
+input, button { padding:8px; margin:6px 0; width:420px }
+table { border-collapse: collapse; margin-top:10px }
+td, th { border:1px solid #ccc; padding:6px }
 </style>
 </head>
-
 <body>
 
-<h2>RFP AUTO GENERATOR — FINAL (Monitoring + Master Pop Up)</h2>
+<h2>RFP AUTO GENERATOR – SUBMIT DRM LM</h2>
 
-<div class="card">
-<h3>1️⃣ Upload Monitoring Daily (CSV)</h3>
-<input type="file" id="monitoringFile" accept=".csv">
-</div>
+<h3>1️⃣ Upload Monitoring Daily</h3>
+<input type="file" id="monitoringFile" accept=".csv,.xlsx" />
 
-<div class="card">
-<h3>2️⃣ Upload Master Pop Up (EXCEL)</h3>
-<input type="file" id="masterFile" accept=".xlsx,.xls">
-</div>
+<h3>2️⃣ Upload Master Pop Up</h3>
+<input type="file" id="masterFile" accept=".xlsx" />
 
-<div class="card">
-<h3>3️⃣ Input Area</h3>
-<table id="inputTable">
-<thead>
-<tr>
-<th>FDTID HOTLIST</th>
-<th>Drawing No (5 digit)</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><input></td>
-<td><input></td>
-</tr>
-</tbody>
-</table>
-<button onclick="addRow()">➕ Tambah Area</button>
-<br>
-<button onclick="generate()">📥 Generate RFP</button>
-</div>
+<h3>3️⃣ Input FDT ID HOTLIST (1 per baris)</h3>
+<textarea id="fdtList" rows="6" style="width:420px"></textarea>
 
-<div id="status" class="success"></div>
+<h3>4️⃣ Generate</h3>
+<button onclick="generate()">Generate Excel</button>
 
-<script>
-let monitoringData=[], masterData=[];
+<p id="status"></p>
 
-document.getElementById("monitoringFile").addEventListener("change", e=>{
- Papa.parse(e.target.files[0],{
-  header:true, skipEmptyLines:true,
-  complete:r=> monitoringData=r.data
- });
-});
-
-document.getElementById("masterFile").addEventListener("change", e=>{
- const reader=new FileReader();
- reader.onload=ev=>{
-  const wb=XLSX.read(ev.target.result,{type:"binary"});
-  masterData=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
- };
- reader.readAsBinaryString(e.target.files[0]);
-});
-
-function addRow(){
- document.querySelector("#inputTable tbody").insertAdjacentHTML("beforeend",
- `<tr><td><input></td><td><input></td></tr>`);
-}
-
-function generate(){
- let rows=document.querySelectorAll("#inputTable tbody tr");
- let output=[];
- let no=1;
-
- rows.forEach(r=>{
-  let fdtid=r.cells[0].querySelector("input").value.trim();
-  let draw=r.cells[1].querySelector("input").value.trim();
-  if(!fdtid||!draw)return;
-
-  let mon=monitoringData.find(x=>x["FDTID HOTLIST"]===fdtid);
-  if(!mon)return;
-
-  let fdtCode=fdtid.replace("EXT","");
-
-  let master=masterData.filter(m=>{
-   let fat=m["FAT_CODE"]||"";
-   return fat.startsWith(fdtCode);
-  });
-
-  let lat=master[0]?.["BUILDING_LATITUDE"]||"";
-  let lon=master[0]?.["BUILDING_LONGITUDE"]||"";
-
-  let hpDesign=master.length;
-  let hpRes=master.filter(x=>x["HOME/HOME-BIZ"]==="HOME").length;
-  let biz=master.filter(x=>x["HOME/HOME-BIZ"]==="HOME-BIZ").length;
-
-  output.push({
-   "No":no++,
-   "Vendor RFP":"KESA",
-   "Date Input":new Date().toLocaleDateString("id-ID"),
-   "Project Type":"NRO B2S Longdrop",
-   "City Town":mon["City Town"],
-   "Tenant ID":mon["Tenant ID PAPAH"],
-   "Permit ID":mon["Permit ID PAPAH"],
-   "Cluster ID APD":mon["Cluster ID"],
-   "FDT Coding":fdtid+"EXT",
-   "Drawing Number LM":"KESA_2_PC_"+draw+"_0",
-   "Nama Perumahan/ Kawasan":mon["FDT Name"],
-   "FDT Name/ Area Name":mon["FDT Name"]+" ADD HP",
-   "Latitude":lat,
-   "Longitude":lon,
-   "HP Plan":mon["HP Survey"],
-   "HP Survey":mon["HP Survey"],
-   "HP Design (Breakdown Permit ID)":hpDesign,
-   "HP APD All":hpDesign,
-   "HP Residential":hpRes,
-   "Bizz Pass":biz,
-   "Type FDT":"48C",
-   "Kebutuhan Core BB":"-",
-   "Jumlah Splitter":"-",
-   "KM Strand LM (M)":"-",
-   "CIvil Work":"AE",
-   "Link Gdrive":""
-  });
- });
-
- const ws=XLSX.utils.json_to_sheet(output);
- const wb=XLSX.utils.book_new();
- XLSX.utils.book_append_sheet(wb,ws,"RFP");
- XLSX.writeFile(wb,"RFP_SUBMIT_DRM.xlsx");
-
- document.getElementById("status").innerText=
- "✅ Berhasil generate "+output.length+" baris";
-}
-</script>
-
+<script src="app.js"></script>
 </body>
 </html>
