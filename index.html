@@ -1,151 +1,148 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <title>RFP Auto Generator — Final</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-  <style>
-    body { font-family: Arial; background: #f5f6f7; padding: 20px; }
-    h2 { margin-top: 30px; }
-    table { width: 100%; border-collapse: collapse; background: white; }
-    th, td { border: 1px solid #ccc; padding: 8px; }
-    th { background: #eee; }
-    button { padding: 8px 14px; margin-top: 10px; cursor: pointer; }
-    input { width: 100%; padding: 5px; }
-    .ok { color: green; font-weight: bold; }
-  </style>
+<meta charset="UTF-8" />
+<title>RFP AUTO GENERATOR — FINAL</title>
+
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+<style>
+body{font-family:Arial;padding:20px;background:#f6f6f6}
+.card{background:#fff;padding:20px;border-radius:10px;margin-bottom:20px}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ccc;padding:6px;font-size:13px}
+input{width:100%;padding:6px}
+button{padding:10px 16px;margin-top:10px;cursor:pointer}
+.success{color:green;font-weight:bold}
+</style>
 </head>
+
 <body>
 
-<h1>RFP AUTO GENERATOR — FINAL</h1>
+<h2>RFP AUTO GENERATOR — FINAL (Monitoring + Master Pop Up)</h2>
 
-<h2>1️⃣ Upload Monitoring Daily (CSV)</h2>
+<div class="card">
+<h3>1️⃣ Upload Monitoring Daily (CSV)</h3>
 <input type="file" id="monitoringFile" accept=".csv">
+</div>
 
-<h2>2️⃣ Upload Master Pop Up (Excel)</h2>
+<div class="card">
+<h3>2️⃣ Upload Master Pop Up (EXCEL)</h3>
 <input type="file" id="masterFile" accept=".xlsx,.xls">
+</div>
 
-<h2>3️⃣ Input Area</h2>
-<table id="areaTable">
-  <thead>
-    <tr>
-      <th>FDTID HOTLIST</th>
-      <th>Drawing No (5 digit)</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td><input class="fdtid"></td>
-      <td><input class="drawingNo"></td>
-    </tr>
-  </tbody>
+<div class="card">
+<h3>3️⃣ Input Area</h3>
+<table id="inputTable">
+<thead>
+<tr>
+<th>FDTID HOTLIST</th>
+<th>Drawing No (5 digit)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><input></td>
+<td><input></td>
+</tr>
+</tbody>
 </table>
+<button onclick="addRow()">➕ Tambah Area</button>
+<br>
+<button onclick="generate()">📥 Generate RFP</button>
+</div>
 
-<button onclick="addArea()">➕ Tambah Area</button>
-<br><br>
-<button onclick="generateRFP()">📥 Generate RFP</button>
-
-<p id="status"></p>
+<div id="status" class="success"></div>
 
 <script>
-let monitoringData = [];
-let masterData = [];
+let monitoringData=[], masterData=[];
 
-// ================= UPLOAD FILE =================
-document.getElementById("monitoringFile").addEventListener("change", e => {
-  const reader = new FileReader();
-  reader.onload = evt => {
-    const lines = evt.target.result.split("\n");
-    const headers = lines[0].split(",").map(h => h.trim());
-    monitoringData = lines.slice(1).map(line => {
-      const obj = {};
-      line.split(",").forEach((v, i) => obj[headers[i]] = v.trim());
-      return obj;
-    });
-    document.getElementById("status").innerHTML =
-      `<span class="ok">Monitoring loaded (${monitoringData.length} data)</span>`;
-  };
-  reader.readAsText(e.target.files[0]);
+document.getElementById("monitoringFile").addEventListener("change", e=>{
+ Papa.parse(e.target.files[0],{
+  header:true, skipEmptyLines:true,
+  complete:r=> monitoringData=r.data
+ });
 });
 
-document.getElementById("masterFile").addEventListener("change", e => {
-  const reader = new FileReader();
-  reader.onload = evt => {
-    const wb = XLSX.read(evt.target.result, { type: "binary" });
-    const sheet = wb.Sheets[wb.SheetNames[0]];
-    masterData = XLSX.utils.sheet_to_json(sheet);
-    document.getElementById("status").innerHTML +=
-      ` | <span class="ok">Master Pop Up loaded (${masterData.length} row)</span>`;
-  };
-  reader.readAsBinaryString(e.target.files[0]);
+document.getElementById("masterFile").addEventListener("change", e=>{
+ const reader=new FileReader();
+ reader.onload=ev=>{
+  const wb=XLSX.read(ev.target.result,{type:"binary"});
+  masterData=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
+ };
+ reader.readAsBinaryString(e.target.files[0]);
 });
 
-// ================= AREA =================
-function addArea() {
-  const row = document.createElement("tr");
-  row.innerHTML = `
-    <td><input class="fdtid"></td>
-    <td><input class="drawingNo"></td>
-  `;
-  document.querySelector("#areaTable tbody").appendChild(row);
+function addRow(){
+ document.querySelector("#inputTable tbody").insertAdjacentHTML("beforeend",
+ `<tr><td><input></td><td><input></td></tr>`);
 }
 
-// ================= GENERATE =================
-function generateRFP() {
-  if (!monitoringData.length || !masterData.length) {
-    alert("File belum lengkap");
-    return;
-  }
+function generate(){
+ let rows=document.querySelectorAll("#inputTable tbody tr");
+ let output=[];
+ let no=1;
 
-  let result = [];
-  const rows = document.querySelectorAll("#areaTable tbody tr");
+ rows.forEach(r=>{
+  let fdtid=r.cells[0].querySelector("input").value.trim();
+  let draw=r.cells[1].querySelector("input").value.trim();
+  if(!fdtid||!draw)return;
 
-  rows.forEach(row => {
-    const fdtid = row.querySelector(".fdtid").value.trim();
-    const drawing = row.querySelector(".drawingNo").value.trim();
-    if (!fdtid || !drawing) return;
+  let mon=monitoringData.find(x=>x["FDTID HOTLIST"]===fdtid);
+  if(!mon)return;
 
-    // 🔥 AUTO FDT CODING
-    const fdtCoding = fdtid + "EXT";
+  let fdtCode=fdtid.replace("EXT","");
 
-    const masterFDT = masterData.filter(m =>
-      String(m["FDT_CODE"]).trim() === fdtCoding
-    );
-
-    let lat = "", lon = "";
-    let hpDesign = masterFDT.length;
-    let hpRes = 0;
-    let biz = 0;
-
-    if (masterFDT.length) {
-      lat = masterFDT[0]["BUILDING_LATITUDE"] || "";
-      lon = masterFDT[0]["BUILDING_LONGITUDE"] || "";
-
-      hpRes = masterFDT.filter(m => m["HOME/HOME-BIZ"] === "HOME").length;
-      biz = masterFDT.filter(m => m["HOME/HOME-BIZ"] === "HOME-BIZ").length;
-    }
-
-    result.push({
-      "FDTID HOTLIST": fdtid,
-      "FDT Coding": fdtCoding,
-      "Drawing No": drawing,
-      "Latitude": lat,
-      "Longitude": lon,
-      "HP Design": hpDesign,
-      "HP Residential": hpRes,
-      "Bizz Pass": biz
-    });
+  let master=masterData.filter(m=>{
+   let fat=m["FAT_CODE"]||"";
+   return fat.startsWith(fdtCode);
   });
 
-  exportExcel(result);
-}
+  let lat=master[0]?.["BUILDING_LATITUDE"]||"";
+  let lon=master[0]?.["BUILDING_LONGITUDE"]||"";
 
-// ================= EXPORT =================
-function exportExcel(data) {
-  const ws = XLSX.utils.json_to_sheet(data);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "RFP");
-  XLSX.writeFile(wb, "RFP_Auto_Generator.xlsx");
+  let hpDesign=master.length;
+  let hpRes=master.filter(x=>x["HOME/HOME-BIZ"]==="HOME").length;
+  let biz=master.filter(x=>x["HOME/HOME-BIZ"]==="HOME-BIZ").length;
+
+  output.push({
+   "No":no++,
+   "Vendor RFP":"KESA",
+   "Date Input":new Date().toLocaleDateString("id-ID"),
+   "Project Type":"NRO B2S Longdrop",
+   "City Town":mon["City Town"],
+   "Tenant ID":mon["Tenant ID PAPAH"],
+   "Permit ID":mon["Permit ID PAPAH"],
+   "Cluster ID APD":mon["Cluster ID"],
+   "FDT Coding":fdtid+"EXT",
+   "Drawing Number LM":"KESA_2_PC_"+draw+"_0",
+   "Nama Perumahan/ Kawasan":mon["FDT Name"],
+   "FDT Name/ Area Name":mon["FDT Name"]+" ADD HP",
+   "Latitude":lat,
+   "Longitude":lon,
+   "HP Plan":mon["HP Survey"],
+   "HP Survey":mon["HP Survey"],
+   "HP Design (Breakdown Permit ID)":hpDesign,
+   "HP APD All":hpDesign,
+   "HP Residential":hpRes,
+   "Bizz Pass":biz,
+   "Type FDT":"48C",
+   "Kebutuhan Core BB":"-",
+   "Jumlah Splitter":"-",
+   "KM Strand LM (M)":"-",
+   "CIvil Work":"AE",
+   "Link Gdrive":""
+  });
+ });
+
+ const ws=XLSX.utils.json_to_sheet(output);
+ const wb=XLSX.utils.book_new();
+ XLSX.utils.book_append_sheet(wb,ws,"RFP");
+ XLSX.writeFile(wb,"RFP_SUBMIT_DRM.xlsx");
+
+ document.getElementById("status").innerText=
+ "✅ Berhasil generate "+output.length+" baris";
 }
 </script>
 
