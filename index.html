@@ -1,34 +1,73 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-<meta charset="UTF-8" />
-<title>RFP AUTO GENERATOR</title>
-<script src="lib/xlsx.full.min.js"></script>
+<meta charset="UTF-8">
+<title>RFP Auto Generator (Lookup FDTID Hotlist)</title>
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 <style>
-body { font-family: Arial; padding:20px }
-input, button { padding:8px; margin:6px 0; width:420px }
-table { border-collapse: collapse; margin-top:10px }
-td, th { border:1px solid #ccc; padding:6px }
+body{font-family:Arial;margin:0;background:#f2f2f2}
+.container{max-width:1200px;margin:auto;background:#fff;padding:20px}
+table{width:100%;border-collapse:collapse;margin-top:10px}
+th,td{border:1px solid #ccc;padding:6px}
+th{background:#eee}
+input{width:100%;box-sizing:border-box;padding:6px}
+.actions{margin-top:12px;display:flex;gap:10px}
+button{padding:10px 14px;font-weight:bold;cursor:pointer}
+.note{color:#555;margin-top:6px}
 </style>
 </head>
 <body>
+<div class="container">
 
-<h2>RFP AUTO GENERATOR – SUBMIT DRM LM</h2>
+<h2>RFP AUTO GENERATOR — Lookup by FDTID HOTLIST</h2>
 
-<h3>1️⃣ Upload Monitoring Daily</h3>
-<input type="file" id="monitoringFile" accept=".csv,.xlsx" />
+<label><b>Upload Monitoring (CSV)</b></label>
+<input type="file" id="monitoringFile" accept=".csv">
 
-<h3>2️⃣ Upload Master Pop Up</h3>
-<input type="file" id="masterFile" accept=".xlsx" />
+<p class="note">
+Kolom wajib di Monitoring: <b>FDTID HOTLIST, City Town, Tenant ID PAPAH, Permit ID PAPAH, Cluster ID, FDT Name, HP Survey</b>
+</p>
 
-<h3>3️⃣ Input FDT ID HOTLIST (1 per baris)</h3>
-<textarea id="fdtList" rows="6" style="width:420px"></textarea>
+<table id="dataTable">
+<thead>
+<tr>
+<th>FDTID HOTLIST</th>
+<th>FDT Coding (manual)</th>
+<th>Drawing No (5 digit)</th>
+<th>Latitude</th>
+<th>Longitude</th>
+<th>HP Design</th>
+<th>HP Residential</th>
+<th>Bizz Pass</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><input class="hotlist"></td>
+<td><input class="fdt"></td>
+<td><input class="draw5" placeholder="00244"></td>
+<td><input class="lat"></td>
+<td><input class="lng"></td>
+<td><input class="hpDesign"></td>
+<td><input class="hpRes"></td>
+<td><input class="bizz"></td>
+</tr>
+</tbody>
+</table>
 
-<h3>4️⃣ Generate</h3>
-<button onclick="generate()">Generate Excel</button>
+<div class="actions">
+  <button type="button" id="btnAdd">➕ Tambah Area</button>
+  <button type="button" id="btnGen">📥 Generate RFP</button>
+</div>
 
 <p id="status"></p>
 
+</div>
+
 <script src="app.js"></script>
+<script>
+document.getElementById("btnAdd").addEventListener("click", addRow);
+document.getElementById("btnGen").addEventListener("click", generate);
+</script>
 </body>
 </html>
