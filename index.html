@@ -6,21 +6,34 @@
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <style>
     body { font-family: Arial; padding: 20px; }
-    input { margin-bottom: 10px; }
-    button { padding: 10px 16px; font-size: 15px; }
+    table { border-collapse: collapse; margin-top: 10px; }
+    th, td { border: 1px solid #ccc; padding: 6px; }
+    input { width: 160px; }
+    button { padding: 8px 14px; margin-top: 10px; }
   </style>
 </head>
 <body>
 
 <h2>RFP Generator (Hotlist → Monitoring)</h2>
 
-<p><b>1. Upload Data Monitoring</b></p>
+<h3>1. Upload Data Monitoring</h3>
 <input type="file" id="monitoringFile">
 
-<p><b>2. Upload Hotlist (isi FDT ID + Drawing Number)</b></p>
-<input type="file" id="hotlistFile">
+<h3>2. Input Area</h3>
+<table id="areaTable">
+  <thead>
+    <tr>
+      <th>No</th>
+      <th>FDT ID HOTLIST</th>
+      <th>Drawing Number (5 digit)</th>
+    </tr>
+  </thead>
+  <tbody></tbody>
+</table>
 
-<p><b>3. Generate Excel RFP</b></p>
+<button onclick="addRow()">➕ Tambah Area</button>
+
+<h3>3. Generate Excel RFP</h3>
 <button onclick="generate()">⬇️ Generate RFP Excel</button>
 
 <script src="app.js"></script>
