@@ -3,16 +3,20 @@ let monitoringData = [];
 document.getElementById("monitoringFile").addEventListener("change", e => {
   const reader = new FileReader();
   reader.onload = evt => {
-    const rows = evt.target.result.split("\n").map(r => r.split(","));
-    const headers = rows.shift().map(h => h.trim());
+    const text = evt.target.result.trim();
+    const rows = text.split(/\r?\n/).map(r => r.split(/,(?=(?:[^"]*"[^"]*")*[^"]*$)/));
+
+    const headers = rows.shift().map(h => h.replace(/"/g, "").trim());
 
     monitoringData = rows.map(r => {
       let obj = {};
-      headers.forEach((h, i) => obj[h] = (r[i] || "").trim());
+      headers.forEach((h, i) => {
+        obj[h] = (r[i] || "").replace(/"/g, "").trim();
+      });
       return obj;
     });
 
-    alert("Monitoring CSV loaded: " + monitoringData.length + " baris");
+    alert(`Monitoring CSV loaded: ${monitoringData.length} baris`);
   };
   reader.readAsText(e.target.files[0]);
 });
@@ -35,33 +39,35 @@ function generateExcel() {
   const rows = document.querySelectorAll("#areaBody tr");
 
   rows.forEach((tr, idx) => {
-    const inputs = tr.querySelectorAll("input");
-    const fdtid = inputs[0].value.trim();
+    const i = tr.querySelectorAll("input");
+    const fdtid = i[0].value.trim();
     if (!fdtid) return;
 
-    const match = monitoringData.find(m => (m["FDTID"] || "") === fdtid);
+    const m = monitoringData.find(d =>
+      (d["FDTID HOTLIST"] || "").toUpperCase() === fdtid.toUpperCase()
+    );
 
     output.push({
       "No": idx + 1,
       "Vendor RFP": "KESA",
-      "Date Input": new Date().toISOString().slice(0,10),
+      "Date Input": new Date().toISOString().slice(0, 10),
       "Project Type": "NRO B2S Longdrop",
-      "City Town": match?.CITY_TOWN || "",
-      "Tenant ID": match?.TENANT_ID || "",
-      "Permit ID": match?.PERMIT_ID || "",
-      "Cluster ID APD": match?.CLUSTER_ID_APD || "",
+      "City Town": m?.["City Town"] || "",
+      "Tenant ID": m?.["Tenant ID PAPAH"] || "",
+      "Permit ID": m?.["Permit ID PAPAH"] || "",
+      "Cluster ID APD": m?.["Cluster ID"] || "",
       "FDT Coding": fdtid,
-      "Drawing Number LM": inputs[1].value,
-      "Nama Perumahan/ Kawasan": match?.PERUMAHAN || "",
-      "FDT Name/ Area Name": match?.FDT_NAME || "",
-      "Latitude": match?.LATITUDE || "",
-      "Longitude": match?.LONGITUDE || "",
-      "HP Plan": match?.HP_SURVEY || "",
-      "HP Survey": match?.HP_SURVEY || "",
-      "HP Design (Breakdown Permit ID)": inputs[2].value,
-      "HP APD All": inputs[3].value,
-      "HP Residential": inputs[4].value,
-      "Bizz Pass": inputs[5].value,
+      "Drawing Number LM": i[1].value,
+      "Nama Perumahan/ Kawasan": m?.["Nama Perumahan"] || "",
+      "FDT Name/ Area Name": m?.["FDT Name"] || "",
+      "Latitude": m?.["Latitude"] || "",
+      "Longitude": m?.["Longitude"] || "",
+      "HP Plan": m?.["HP Survey"] || "",
+      "HP Survey": m?.["HP Survey"] || "",
+      "HP Design (Breakdown Permit ID)": i[2].value,
+      "HP APD All": i[3].value,
+      "HP Residential": i[4].value,
+      "Bizz Pass": i[5].value,
       "Type FDT": "48C",
       "Kebutuhan Core BB": "-",
       "Jumlah Splitter": "-",
@@ -71,8 +77,14 @@ function generateExcel() {
     });
   });
 
+  if (!output.length) {
+    alert("Tidak ada data yang berhasil diproses");
+    return;
+  }
+
   const ws = XLSX.utils.json_to_sheet(output);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "RFP");
+
   XLSX.writeFile(wb, "RFP_FINAL.xlsx");
 }
