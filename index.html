@@ -2,53 +2,26 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <title>RFP Auto Generator</title>
+  <title>RFP Generator</title>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <style>
     body { font-family: Arial; padding: 20px; }
-    table { border-collapse: collapse; width: 100%; }
-    th, td { border: 1px solid #ccc; padding: 6px; text-align: center; }
-    th { background: #eee; }
-    input { width: 100%; }
-    button { padding: 8px 14px; margin: 10px 5px; }
+    input { margin-bottom: 10px; }
+    button { padding: 10px 16px; font-size: 15px; }
   </style>
 </head>
 <body>
 
-<h2>RFP AUTO GENERATOR — Lookup by FDTID HOTLIST</h2>
+<h2>RFP Generator (Hotlist → Monitoring)</h2>
 
-<h3>1. Upload Monitoring CSV</h3>
-<input type="file" id="monitoringFile" accept=".csv">
+<p><b>1. Upload Data Monitoring</b></p>
+<input type="file" id="monitoringFile">
 
-<h3>2. Input Area</h3>
+<p><b>2. Upload Hotlist (isi FDT ID + Drawing Number)</b></p>
+<input type="file" id="hotlistFile">
 
-<table>
-  <thead>
-    <tr>
-      <th>No</th>
-      <th>FDTID HOTLIST</th>
-      <th>Drawing Number (5 digit)</th>
-      <th>HP Design</th>
-      <th>HP APD All</th>
-      <th>HP Residential</th>
-      <th>Bizz Pass</th>
-    </tr>
-  </thead>
-  <tbody id="areaBody">
-    <tr>
-      <td>1</td>
-      <td><input></td>
-      <td><input value="00200"></td>
-      <td><input></td>
-      <td><input></td>
-      <td><input></td>
-      <td><input value="0"></td>
-    </tr>
-  </tbody>
-</table>
-
-<button onclick="addRow()">➕ Tambah Area</button>
-<button onclick="generateExcel()">⬇️ Generate RFP Excel</button>
+<p><b>3. Generate Excel RFP</b></p>
+<button onclick="generate()">⬇️ Generate RFP Excel</button>
 
 <script src="app.js"></script>
 </body>
