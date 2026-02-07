@@ -1,72 +1,153 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-<meta charset="UTF-8">
-<title>RFP Auto Generator — Final</title>
-<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
-
-<style>
-body { font-family: Arial, sans-serif; padding:20px; background:#f5f5f5 }
-h2,h3 { margin:8px 0 }
-.box { background:#fff; padding:16px; border-radius:6px; margin-bottom:16px }
-table { border-collapse: collapse; width:100%; margin-top:10px }
-th,td { border:1px solid #ccc; padding:6px; text-align:left }
-th { background:#eee }
-input { width:100%; padding:4px }
-button { padding:8px 16px; margin-top:10px; font-weight:bold; cursor:pointer }
-.status { margin-top:10px; font-weight:bold }
-.actions { display:flex; gap:10px; margin-top:10px }
-</style>
+  <meta charset="UTF-8">
+  <title>RFP Auto Generator — Final</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <style>
+    body { font-family: Arial; background: #f5f6f7; padding: 20px; }
+    h2 { margin-top: 30px; }
+    table { width: 100%; border-collapse: collapse; background: white; }
+    th, td { border: 1px solid #ccc; padding: 8px; }
+    th { background: #eee; }
+    button { padding: 8px 14px; margin-top: 10px; cursor: pointer; }
+    input { width: 100%; padding: 5px; }
+    .ok { color: green; font-weight: bold; }
+  </style>
 </head>
-
 <body>
 
-<h2>RFP AUTO GENERATOR — FINAL (Monitoring + Master Pop Up)</h2>
+<h1>RFP AUTO GENERATOR — FINAL</h1>
 
-<div class="box">
-  <h3>1️⃣ Upload Monitoring Daily (CSV)</h3>
-  <input type="file" id="monitoringFile" accept=".csv">
-  <p>Header wajib:
-    <b>FDTID HOTLIST, City Town, Tenant ID PAPAH, Permit ID PAPAH, Cluster ID, FDT Name, HP Survey</b>
-  </p>
-</div>
+<h2>1️⃣ Upload Monitoring Daily (CSV)</h2>
+<input type="file" id="monitoringFile" accept=".csv">
 
-<div class="box">
-  <h3>2️⃣ Upload Master Pop Up (EXCEL)</h3>
-  <input type="file" id="masterPopupFile" accept=".xlsx,.xls">
-  <p>Dipakai untuk:
-    <b>Latitude, Longitude, HP Design, HP Residential, Bizz Pass</b>
-  </p>
-</div>
+<h2>2️⃣ Upload Master Pop Up (Excel)</h2>
+<input type="file" id="masterFile" accept=".xlsx,.xls">
 
-<div class="box">
-  <h3>3️⃣ Input Area (cukup ini saja)</h3>
+<h2>3️⃣ Input Area</h2>
+<table id="areaTable">
+  <thead>
+    <tr>
+      <th>FDTID HOTLIST</th>
+      <th>Drawing No (5 digit)</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><input class="fdtid"></td>
+      <td><input class="drawingNo"></td>
+    </tr>
+  </tbody>
+</table>
 
-  <table id="dataTable">
-    <thead>
-      <tr>
-        <th>FDTID HOTLIST</th>
-        <th>FDT Coding</th>
-        <th>Drawing No (5 digit)</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td><input class="hotlist" placeholder="contoh: FPD06000"></td>
-        <td><input class="fdt" placeholder="contoh: FOT13700"></td>
-        <td><input class="draw5" placeholder="00244"></td>
-      </tr>
-    </tbody>
-  </table>
+<button onclick="addArea()">➕ Tambah Area</button>
+<br><br>
+<button onclick="generateRFP()">📥 Generate RFP</button>
 
-  <div class="actions">
-    <button onclick="addRow()">➕ Tambah Area</button>
-    <button onclick="generate()">📥 Generate RFP</button>
-  </div>
+<p id="status"></p>
 
-  <div id="status" class="status"></div>
-</div>
+<script>
+let monitoringData = [];
+let masterData = [];
 
-<script src="app.js"></script>
+// ================= UPLOAD FILE =================
+document.getElementById("monitoringFile").addEventListener("change", e => {
+  const reader = new FileReader();
+  reader.onload = evt => {
+    const lines = evt.target.result.split("\n");
+    const headers = lines[0].split(",").map(h => h.trim());
+    monitoringData = lines.slice(1).map(line => {
+      const obj = {};
+      line.split(",").forEach((v, i) => obj[headers[i]] = v.trim());
+      return obj;
+    });
+    document.getElementById("status").innerHTML =
+      `<span class="ok">Monitoring loaded (${monitoringData.length} data)</span>`;
+  };
+  reader.readAsText(e.target.files[0]);
+});
+
+document.getElementById("masterFile").addEventListener("change", e => {
+  const reader = new FileReader();
+  reader.onload = evt => {
+    const wb = XLSX.read(evt.target.result, { type: "binary" });
+    const sheet = wb.Sheets[wb.SheetNames[0]];
+    masterData = XLSX.utils.sheet_to_json(sheet);
+    document.getElementById("status").innerHTML +=
+      ` | <span class="ok">Master Pop Up loaded (${masterData.length} row)</span>`;
+  };
+  reader.readAsBinaryString(e.target.files[0]);
+});
+
+// ================= AREA =================
+function addArea() {
+  const row = document.createElement("tr");
+  row.innerHTML = `
+    <td><input class="fdtid"></td>
+    <td><input class="drawingNo"></td>
+  `;
+  document.querySelector("#areaTable tbody").appendChild(row);
+}
+
+// ================= GENERATE =================
+function generateRFP() {
+  if (!monitoringData.length || !masterData.length) {
+    alert("File belum lengkap");
+    return;
+  }
+
+  let result = [];
+  const rows = document.querySelectorAll("#areaTable tbody tr");
+
+  rows.forEach(row => {
+    const fdtid = row.querySelector(".fdtid").value.trim();
+    const drawing = row.querySelector(".drawingNo").value.trim();
+    if (!fdtid || !drawing) return;
+
+    // 🔥 AUTO FDT CODING
+    const fdtCoding = fdtid + "EXT";
+
+    const masterFDT = masterData.filter(m =>
+      String(m["FDT_CODE"]).trim() === fdtCoding
+    );
+
+    let lat = "", lon = "";
+    let hpDesign = masterFDT.length;
+    let hpRes = 0;
+    let biz = 0;
+
+    if (masterFDT.length) {
+      lat = masterFDT[0]["BUILDING_LATITUDE"] || "";
+      lon = masterFDT[0]["BUILDING_LONGITUDE"] || "";
+
+      hpRes = masterFDT.filter(m => m["HOME/HOME-BIZ"] === "HOME").length;
+      biz = masterFDT.filter(m => m["HOME/HOME-BIZ"] === "HOME-BIZ").length;
+    }
+
+    result.push({
+      "FDTID HOTLIST": fdtid,
+      "FDT Coding": fdtCoding,
+      "Drawing No": drawing,
+      "Latitude": lat,
+      "Longitude": lon,
+      "HP Design": hpDesign,
+      "HP Residential": hpRes,
+      "Bizz Pass": biz
+    });
+  });
+
+  exportExcel(result);
+}
+
+// ================= EXPORT =================
+function exportExcel(data) {
+  const ws = XLSX.utils.json_to_sheet(data);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "RFP");
+  XLSX.writeFile(wb, "RFP_Auto_Generator.xlsx");
+}
+</script>
+
 </body>
 </html>
