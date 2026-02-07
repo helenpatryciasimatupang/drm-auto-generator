@@ -3,17 +3,16 @@ let monitoringData = [];
 document.getElementById("monitoringFile").addEventListener("change", e => {
   const reader = new FileReader();
   reader.onload = evt => {
-    const text = evt.target.result;
-    const rows = text.split("\n").map(r => r.split(","));
-    const headers = rows.shift();
+    const rows = evt.target.result.split("\n").map(r => r.split(","));
+    const headers = rows.shift().map(h => h.trim());
 
     monitoringData = rows.map(r => {
       let obj = {};
-      headers.forEach((h, i) => obj[h.trim()] = (r[i] || "").trim());
+      headers.forEach((h, i) => obj[h] = (r[i] || "").trim());
       return obj;
     });
 
-    alert("Monitoring CSV loaded: " + monitoringData.length + " data");
+    alert("Monitoring CSV loaded: " + monitoringData.length + " baris");
   };
   reader.readAsText(e.target.files[0]);
 });
@@ -37,41 +36,38 @@ function generateExcel() {
 
   rows.forEach((tr, idx) => {
     const inputs = tr.querySelectorAll("input");
-    const fdtid = inputs[2].value.trim();
-
+    const fdtid = inputs[0].value.trim();
     if (!fdtid) return;
 
-    const match = monitoringData.find(m =>
-      (m["FDTID"] || "").trim() === fdtid
-    );
+    const match = monitoringData.find(m => (m["FDTID"] || "") === fdtid);
 
     output.push({
       "No": idx + 1,
-      "Vendor RFP": inputs[0].value,
-      "Date Input": new Date().toISOString().slice(0, 10),
-      "Project Type": inputs[1].value,
-      "City Town": match ? match["CITY_TOWN"] : "",
-      "Tenant ID": match ? match["TENANT_ID"] : "",
-      "Permit ID": match ? match["PERMIT_ID"] : "",
-      "Cluster ID APD": match ? match["CLUSTER_ID_APD"] : "",
-      "FDT Coding": match ? (fdtid + (match["EXT"] || "")) : "",
-      "Drawing Number LM": inputs[3].value,
-      "Nama Perumahan/ Kawasan": match ? match["PERUMAHAN"] : "",
-      "FDT Name/ Area Name": match ? match["FDT_NAME"] : "",
-      "Latitude": match ? match["LATITUDE"] : "",
-      "Longitude": match ? match["LONGITUDE"] : "",
-      "HP Plan": inputs[4].value,
-      "HP Survey": inputs[5].value,
-      "HP Design (Breakdown Permit ID)": inputs[6].value,
-      "HP APD All": inputs[7].value,
-      "HP Residential": inputs[8].value,
-      "Bizz Pass": inputs[9].value,
-      "Type FDT": inputs[10].value,
-      "Kebutuhan Core BB": inputs[11].value,
-      "Jumlah Splitter": inputs[12].value,
-      "KM Strand LM (M)": inputs[13].value,
-      "CIvil Work": inputs[14].value,
-      "Link Gdrive": inputs[15].value
+      "Vendor RFP": "KESA",
+      "Date Input": new Date().toISOString().slice(0,10),
+      "Project Type": "NRO B2S Longdrop",
+      "City Town": match?.CITY_TOWN || "",
+      "Tenant ID": match?.TENANT_ID || "",
+      "Permit ID": match?.PERMIT_ID || "",
+      "Cluster ID APD": match?.CLUSTER_ID_APD || "",
+      "FDT Coding": fdtid,
+      "Drawing Number LM": inputs[1].value,
+      "Nama Perumahan/ Kawasan": match?.PERUMAHAN || "",
+      "FDT Name/ Area Name": match?.FDT_NAME || "",
+      "Latitude": match?.LATITUDE || "",
+      "Longitude": match?.LONGITUDE || "",
+      "HP Plan": match?.HP_SURVEY || "",
+      "HP Survey": match?.HP_SURVEY || "",
+      "HP Design (Breakdown Permit ID)": inputs[2].value,
+      "HP APD All": inputs[3].value,
+      "HP Residential": inputs[4].value,
+      "Bizz Pass": inputs[5].value,
+      "Type FDT": "48C",
+      "Kebutuhan Core BB": "-",
+      "Jumlah Splitter": "-",
+      "KM Strand LM (M)": "-",
+      "Civil Work": "AE",
+      "Link Gdrive": ""
     });
   });
 
